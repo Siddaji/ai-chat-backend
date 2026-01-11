@@ -9,21 +9,30 @@ function App() {
   const sendMessage = async () => {
     if (!message.trim()) return;
 
+    const updatedMessages = [...messages, { role: "user", text: message }];
+
+    setMessages(updatedMessages);
     setLoading(true);
     setError("");
 
-    setMessages(prev => [...prev, { role: "user", text: message }]);
-
     try {
-      const response = await fetch("http://localhost:5000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: updatedMessages }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Server error");
+      }
 
       const data = await response.json();
 
       setMessages(prev => [...prev, { role: "ai", text: data.reply }]);
+
     } catch (err) {
       setError("Failed to connect to AI");
     } finally {
@@ -51,6 +60,7 @@ function App() {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
+
       <button onClick={sendMessage}>Send</button>
     </div>
   );
